@@ -1,0 +1,70 @@
+#!/bin/bash
+# v1 - Ansible 托管，勿手动修改
+# Yattee Server 每周自动更新脚本
+# 功能：拉取最新源码 → 重建 Docker 镜像 → 获取最新 yt-dlp 版本
+# 
+# 使用方式：
+#   由 QNAP crontab 定期调用（详见部署 README）
+#   每周一凌晨 4:00 执行一次
+#   日志输出到 {{ yattee_install_dir }}/update.log
+
+set -e  # 任何命令失败就立即退出，避免静默错误
+export HOME=/tmp  # 防止 QNAP 环境变量异常导致 Docker 构建报权限错误
+
+# ────────────────────────────────────────────────────────────────────
+# 配置项（由 Ansible 模板渲染）
+# ────────────────────────────────────────────────────────────────────
+INSTALL_DIR="{{ yattee_install_dir }}"
+LOG_FILE="${INSTALL_DIR}/update.log"
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+# ────────────────────────────────────────────────────────────────────
+# 日志函数
+# ────────────────────────────────────────────────────────────────────
+log_info() {
+    echo "[${TIMESTAMP}] [INFO] $1" | tee -a "${LOG_FILE}"
+}
+
+log_error() {
+    echo "[${TIMESTAMP}] [ERROR] $1" | tee -a "${LOG_FILE}"
+}
+
+# ────────────────────────────────────────────────────────────────────
+# 主逻辑
+# ────────────────────────────────────────────────────────────────────
+
+{
+    log_info "========== Yattee Server 自动更新开始 =========="
+    
+    # 切换到安装目录
+    cd "${INSTALL_DIR}" || {
+        log_error "无法进入 ${INSTALL_DIR}，中止更新"
+        exit 1
+    }
+    log_info "切换目录：${INSTALL_DIR}"
+    
+    # 第一步：从 GitHub 拉取最新源码
+    log_info "正在从 GitHub 拉取最新源码..."
+    if ! {{ qnap_docker_bin | default('docker') }} run --rm --entrypoint sh -v "${INSTALL_DIR}:/git" -w /git alpine/git -c "git config --global --add safe.directory /git && git pull origin main" 2>&1 | tee -a "${LOG_FILE}"; then
+        log_error "Git 拉取失败，请检查网络或 GitHub 连接"
+        exit 1
+    fi
+    log_info "源码拉取完成"
+    
+    # 第二步：重建 Docker 镜像（--build 参数强制重新编译）
+    log_info "正在重建 Yattee Docker 镜像（获取最新 yt-dlp）..."
+    if ! {{ qnap_docker_bin | default('docker') }} compose up -d --build 2>&1 | tee -a "${LOG_FILE}"; then
+        log_error "Docker Compose 构建失败"
+        exit 1
+    fi
+    log_info "Docker 镜像重建完成"
+    
+    # 第三步：清理无用的中间镜像（可选，节省空间）
+    log_info "清理 Docker 中间镜像..."
+    {{ qnap_docker_bin | default('docker') }} image prune -f --filter "dangling=true" 2>&1 | tee -a "${LOG_FILE}" || true
+    
+    log_info "========== Yattee Server 自动更新成功 =========="
+    
+} >> "${LOG_FILE}" 2>&1
+
+exit 0

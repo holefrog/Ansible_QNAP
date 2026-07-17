@@ -1,0 +1,29 @@
+services:
+  {{ lms_container_name }}:
+    image: {{ lms_image }}
+    container_name: {{ lms_container_name }}
+    ports:
+      - "{{ lms_stream_tcp_port }}:3483/tcp"
+      - "{{ lms_stream_udp_port }}:3483/udp"
+      - "{{ lms_http_port }}:9000"
+      - "{{ lms_cli_port }}:9090"
+    volumes:
+      - "{{ lms_config_dir }}:/config"
+      - "{{ lms_playlist_dir }}:/playlist"
+      - "{{ lms_music_dir }}:/music:ro"
+    environment:
+      - HTTP_PORT={{ lms_http_port }}
+      - LANGUAGE=en_US.UTF-8
+      - LANG=en_US.UTF-8
+      - LC_ALL=C.UTF-8
+      - PUID={{ lms_puid }}
+      - PGID={{ lms_pgid }}
+      - TZ={{ timezone }}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '{{ lms_cpu_limit }}'
+          memory: '{{ lms_memory_limit }}'
+        reservations:
+          memory: '{{ lms_memory_reservation }}'

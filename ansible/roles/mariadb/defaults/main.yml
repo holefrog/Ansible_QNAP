@@ -1,0 +1,27 @@
+---
+# MariaDB Role 变量（全部集中在这里）
+
+# ── 密码（从 secrets.yml vault 加密读取）─────────────────
+mariadb_root_password: "{{ vault_mariadb_root_password }}"
+mariadb_user_password: "{{ vault_mariadb_user_password }}"
+
+# ── MariaDB 连接 ──────────────────────────────────────────
+mariadb_host: "192.168.50.210"
+mariadb_port: 3306
+mariadb_database: "kodi_video"
+mariadb_user: "kodi"
+
+# ── QNAP 数据目录 ─────────────────────────────────────────
+mariadb_data_dir: "{{ qnap_container_ssd_dir }}/kodi-mariadb/data"
+mariadb_conf_dir: "{{ qnap_container_ssd_dir }}/kodi-mariadb/conf"
+mariadb_compose_dir: "{{ qnap_container_ssd_dir }}/kodi-mariadb"
+
+# ── 容器权限 ──────────────────────────────────────────────
+mariadb_pgid: "100"
+mariadb_puid: "99"
+
+# ── 容器命名 ──────────────────────────────────────────────
+mariadb_container_name: "mariadb"
+
+# ── 时区 ──────────────────────────────────────────────────
+timezone: "America/Vancouver"

@@ -1,0 +1,19 @@
+---
+# 修复 QNAP 上已存在的目录权限（可能由 root/docker 创建），确保 ansible_user 拥有写入权限，实现幂等
+- name: 确保 Ansible 运行用户对部署目录有写权限
+  ansible.builtin.shell: |
+    echo "{{ vault_qnap_password }}" | sudo -S chown {{ ansible_user }} "{{ mariadb_compose_dir }}" "{{ mariadb_compose_dir }}/docker-compose.yml" || true
+    echo "{{ vault_qnap_password }}" | sudo -S chown -R {{ ansible_user }} "{{ mariadb_conf_dir }}" || true
+    echo "{{ vault_qnap_password }}" | sudo -S chown -R 999:999 "{{ mariadb_data_dir }}" || true
+  ignore_errors: yes
+  changed_when: false
+
+- name: 创建 MariaDB 容器目录
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ mariadb_data_dir }}"
+    - "{{ mariadb_conf_dir }}"
+    - "{{ mariadb_compose_dir }}"

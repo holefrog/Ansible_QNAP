@@ -1,0 +1,5 @@
+[qnap]
+192.168.1.100 ansible_port=22
+
+[qnap:vars]
+ansible_user = admin

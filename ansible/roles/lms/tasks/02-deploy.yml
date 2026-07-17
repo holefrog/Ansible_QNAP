@@ -1,0 +1,21 @@
+---
+- name: 执行新容器部署或更新
+  when: pull_result.changed or (existing_lms_containers.stdout_lines != ['lyrionms'])
+  block:
+    - name: 停止并移除旧的 LMS 容器，释放端口
+      ansible.builtin.command: "{{ qnap_docker_bin }} rm -f {{ item }}"
+      loop: "{{ existing_lms_containers.stdout_lines }}"
+      when: existing_lms_containers.stdout_lines | length > 0
+
+    - name: 渲染并部署 docker-compose.yml 到目标机器
+      ansible.builtin.template:
+        src: docker-compose.yml.j2
+        dest: "{{ lms_compose_dir }}/docker-compose.yml"
+        mode: '0644'
+
+    - name: 启动或更新 LMS 容器
+      ansible.builtin.command:
+        cmd: "{{ qnap_docker_bin }} compose -p lyrionms up -d"
+        chdir: "{{ lms_compose_dir }}"
+      register: start_lms
+      changed_when: "'Started' in start_lms.stdout or 'Created' in start_lms.stdout"

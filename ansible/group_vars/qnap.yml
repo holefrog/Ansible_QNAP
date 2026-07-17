@@ -1,0 +1,19 @@
+---
+# QNAP 主机连接参数
+
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+ansible_ssh_pass: "{{ vault_qnap_password }}"   # 来自 secrets.yml
+ansible_become_method: sudo
+
+# QNAP 核心存储卷
+qnap_vol1: "/share/CACHEDEV1_DATA"
+qnap_vol4: "/share/CACHEDEV4_DATA"
+
+# 核心应用与数据目录
+qnap_container_dir: "{{ qnap_vol1 }}/Container"
+qnap_container_ssd_dir: "{{ qnap_vol1 }}/Container_SSD"
+qnap_media_dir: "{{ qnap_vol4 }}/Media"
+
+# 核心环境路径
+ansible_python_interpreter: "{{ qnap_vol1 }}/.qpkg/HybridBackup/CloudConnector3/python/bin/python3"
+qnap_docker_bin: "{{ qnap_vol1 }}/.qpkg/container-station/bin/docker"

@@ -1,0 +1,19 @@
+---
+- name: 确保 ~/.config/homelab 目录存在
+  ansible.builtin.file:
+    path: ~/.config/homelab
+    state: directory
+    mode: '0700'
+  delegate_to: localhost
+
+- name: 导出 MariaDB 凭证供外部调用
+  ansible.builtin.copy:
+    dest: ~/.config/homelab/mariadb_config.yml
+    mode: '0600'
+    content: |
+      ---
+      mariadb_host: "{{ mariadb_host }}"
+      mariadb_port: {{ mariadb_port }}
+      mariadb_user: "{{ mariadb_user }}"
+      mariadb_user_password: "{{ mariadb_user_password }}"
+  delegate_to: localhost

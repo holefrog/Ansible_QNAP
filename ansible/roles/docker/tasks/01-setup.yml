@@ -1,0 +1,27 @@
+---
+- name: 探测 Container Station (Docker) 路径
+  ansible.builtin.stat:
+    path: "{{ qnap_docker_bin }}"
+  register: docker_bin_stat
+
+- name: 阻断运行并提示手动安装
+  ansible.builtin.fail:
+    msg: |
+      🚨 严重错误：未检测到 Docker 环境！
+      受限于 QNAP 系统架构，Ansible 无法在后台自动安装它。
+
+      👉 请按以下步骤操作：
+      1. 登录 QNAP Web 管理界面
+      2. 打开 App Center (应用中心)
+      3. 搜索并安装 "Container Station"
+      4. 安装完毕后，再次运行本部署脚本
+  when: not docker_bin_stat.stat.exists
+
+- name: 确保当前用户的 Container Station Home 目录存在 (解决 Docker 构建和权限限制问题)
+  ansible.builtin.file:
+    path: "{{ qnap_vol1 | default('/share/CACHEDEV1_DATA') }}/.qpkg/container-station/homes/{{ ansible_user }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: '0755'
+  become: yes
+  become_user: admin

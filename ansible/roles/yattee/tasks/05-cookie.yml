@@ -1,0 +1,112 @@
+---
+- name: 提取并同步 YouTube Cookie
+  when: sync_cookie | default(false) | bool
+  block:
+    - name: 本地提取阶段
+      delegate_to: localhost
+      become: false
+      block:
+        - name: 询问本地代理地址
+          ansible.builtin.pause:
+            prompt: "请输入本地代理地址 (如 socks5://127.0.0.1:12334)，不需要代理请直接回车留空"
+          register: proxy_prompt
+
+        - name: 设置代理变量
+          ansible.builtin.set_fact:
+            proxy_url: "{{ proxy_prompt.user_input | default('') }}"
+
+        - name: 检查依赖工具 (google-chrome/chromium)
+          ansible.builtin.shell: |
+            if command -v google-chrome &> /dev/null; then
+                echo "google-chrome"
+            elif command -v google-chrome-stable &> /dev/null; then
+                echo "google-chrome-stable"
+            elif command -v chromium-browser &> /dev/null; then
+                echo "chromium-browser"
+            elif command -v chromium &> /dev/null; then
+                echo "chromium"
+            else
+                echo ""
+            fi
+          register: chrome_bin
+          changed_when: false
+
+        - name: 断言浏览器已安装
+          ansible.builtin.fail:
+            msg: "未找到 Chrome 或 Chromium 浏览器，请先安装！"
+          when: chrome_bin.stdout == ""
+
+        - name: 检查依赖工具 (yt-dlp)
+          ansible.builtin.command: which yt-dlp
+          register: ytdlp_check
+          changed_when: false
+          ignore_errors: true
+
+        - name: 断言 yt-dlp 已安装
+          ansible.builtin.fail:
+            msg: "未找到 yt-dlp，请先安装 (例如 pip install yt-dlp)！"
+          when: ytdlp_check.failed
+
+        - name: 启动独立的 Chrome 浏览器
+          ansible.builtin.shell: |
+            PROXY_ARG=""
+            if [ -n "{{ proxy_url }}" ]; then
+                PROXY_ARG="--proxy-server={{ proxy_url }}"
+            fi
+            {{ chrome_bin.stdout }} $PROXY_ARG --user-data-dir="$HOME/chrome_yattee" "https://www.youtube.com" >/dev/null 2>&1 &
+          async: 10
+          poll: 0
+
+        - name: 提示用户登录 YouTube
+          ansible.builtin.pause:
+            prompt: |
+              =======================================================
+              👉 已经为你打开了一个隔离的 Chrome 浏览器。
+              👉 请在弹出的窗口中登录你的 YouTube 账号。
+              👉 登录成功后，请【彻底关闭】该 Chrome 窗口！
+              =======================================================
+              确认关闭浏览器后，请按【回车键】继续提取 Cookie...
+
+        - name: 执行 yt-dlp 提取 Cookie
+          ansible.builtin.shell: |
+            cd /tmp
+            rm -f /tmp/yt-cookies-temp.txt /tmp/yattee-cookies.txt
+            PROXY_ARG=""
+            if [ -n "{{ proxy_url }}" ]; then
+                PROXY_ARG="--proxy {{ proxy_url }}"
+            fi
+            yt-dlp $PROXY_ARG --cookies-from-browser "chrome:$HOME/chrome_yattee" --cookies /tmp/yt-cookies-temp.txt "https://www.youtube.com/watch?v=jNQXAC9IVRw" --skip-download || true
+            echo "# Netscape HTTP Cookie File" > /tmp/yattee-cookies.txt
+            grep "youtube" /tmp/yt-cookies-temp.txt >> /tmp/yattee-cookies.txt
+          args:
+            creates: /tmp/yattee-cookies.txt
+          register: extract_result
+
+        - name: 检查 Cookie 是否提取成功
+          ansible.builtin.fail:
+            msg: "未能成功提取 Cookie，请检查 yt-dlp 或尝试重新运行。"
+          when: extract_result.failed
+
+    - name: 确保 Yattee 部署目录存在
+      ansible.builtin.file:
+        path: "{{ yattee_install_dir }}"
+        state: directory
+        mode: '0755'
+      become: yes
+      become_user: admin
+
+    - name: 将 Cookie 文件推送到 QNAP
+      ansible.builtin.copy:
+        src: /tmp/yattee-cookies.txt
+        dest: "{{ yattee_install_dir }}/cookies.txt"
+        owner: "{{ ansible_user | default('admin') }}"
+        mode: '0644'
+      become: yes
+      become_user: admin
+
+    - name: 重启 Yattee Server 使 Cookie 生效
+      ansible.builtin.command:
+        cmd: "{{ qnap_docker_bin | default('/share/CACHEDEV1_DATA/.qpkg/container-station/bin/docker') }} compose restart yattee-server"
+        chdir: "{{ yattee_install_dir }}"
+      become: yes
+      become_user: admin

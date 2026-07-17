@@ -1,0 +1,5 @@
+---
+- import_tasks: 01-setup.yml
+- import_tasks: 02-deploy.yml
+- import_tasks: 03-user.yml
+- import_tasks: 04-export.yml

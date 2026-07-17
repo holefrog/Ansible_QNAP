@@ -1,0 +1,19 @@
+services:
+  {{ mariadb_container_name }}:
+    image: mariadb:10.11
+    container_name: {{ mariadb_container_name }}
+    command: --skip-ssl
+    ports:
+      - "{{ mariadb_port }}:3306"
+    volumes:
+      - "{{ mariadb_data_dir }}:/var/lib/mysql"
+      - "{{ mariadb_conf_dir }}:/etc/mysql/conf.d"
+    environment:
+      - MYSQL_ROOT_PASSWORD={{ mariadb_root_password }}
+      - MYSQL_DATABASE={{ mariadb_database }}
+      - MYSQL_USER={{ mariadb_user }}
+      - MYSQL_PASSWORD={{ mariadb_user_password }}
+      - TZ={{ timezone }}
+      - PGID={{ mariadb_pgid }}
+      - PUID={{ mariadb_puid }}
+    restart: unless-stopped

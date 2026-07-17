@@ -1,0 +1,60 @@
+services:
+  tailscale-sidecar:
+    image: tailscale/tailscale:latest
+    container_name: {{ yattee_tailscale_container_name }}
+    hostname: {{ yattee_tailscale_hostname }}
+    
+    environment:
+      - TS_AUTHKEY={{ tailscale_auth_key }}
+      - TS_EXTRA_ARGS=--accept-dns --advertise-tags=tag:yattee-server
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+
+    volumes:
+      - {{ yattee_tailscale_state_dir }}:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+
+    cap_add:
+      - net_admin
+      - sys_module
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "tailscale", "status", "--peers=false"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  yattee-server:
+    build:
+      context: {{ yattee_install_dir }}
+      dockerfile: Dockerfile
+
+    container_name: {{ yattee_server_container_name }}
+
+    network_mode: service:tailscale-sidecar
+
+    depends_on:
+      tailscale-sidecar:
+        condition: service_healthy
+
+    environment:
+      - ADMIN_USERNAME={{ yattee_admin_user }}
+      - ADMIN_PASSWORD={{ yattee_admin_password }}
+      - CREDENTIALS_ENCRYPTION_KEY={{ yattee_secret_key }}
+      - SECURE_COOKIES=true
+
+    volumes:
+      - {{ yattee_data_dir }}:/app/data
+      - {{ yattee_cache_dir }}:/root/.cache/yt-dlp
+      - ./yt-dlp.conf:/etc/yt-dlp.conf:ro
+      - ./cookies.txt:/etc/yt-dlp-cookies.txt
+
+    restart: unless-stopped
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

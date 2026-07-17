@@ -1,0 +1,27 @@
+---
+- name: 渲染并部署 docker-compose.yml 到目标机器
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ mariadb_compose_dir }}/docker-compose.yml"
+    mode: '0644'
+
+- name: 停止并移除旧的 kodi-mariadb 容器以避免端口冲突
+  ansible.builtin.command: "{{ qnap_docker_bin }} rm -f kodi-mariadb"
+  ignore_errors: yes
+  changed_when: false
+
+- name: 启动 MariaDB 容器
+  ansible.builtin.command:
+    cmd: "{{ qnap_docker_bin }} compose -p {{ mariadb_container_name }} up -d"
+    chdir: "{{ mariadb_compose_dir }}"
+  register: start_mariadb
+  changed_when: "'Started' in start_mariadb.stdout or 'Created' in start_mariadb.stdout"
+
+- name: 等待 MariaDB 启动完成 (端口 3306)
+  ansible.builtin.wait_for:
+    host: "{{ mariadb_host }}"
+    port: "{{ mariadb_port }}"
+    delay: 5
+    timeout: 60
+    state: started
+  delegate_to: localhost

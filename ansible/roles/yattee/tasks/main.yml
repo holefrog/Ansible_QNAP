@@ -1,0 +1,12 @@
+---
+# v2 - QNAP 适配版本：使用 crontab 替代 systemd timer
+# 注意：本 playbook 直接修改 QNAP 主机的 /etc/config/crontab 文件
+#      不能直接应用到 Thinkpad 控制节点，需要通过 delegate_to 或 ssh 远程执行
+
+- import_tasks: 01-setup.yml
+- import_tasks: 02-config.yml
+- import_tasks: 03-deploy.yml
+- import_tasks: 04-cron.yml
+  tags: ['yattee']
+- import_tasks: 05-cookie.yml
+  tags: ['cookie']

@@ -1,0 +1,17 @@
+---
+container_base_dir: "{{ qnap_container_ssd_dir }}"
+yattee_base_dir: "{{ container_base_dir }}/yattee-server"
+yattee_tailscale_dir: "{{ container_base_dir }}/yattee-tailscale"
+
+yattee_install_dir: "{{ yattee_base_dir }}/repo"
+yattee_data_dir: "{{ yattee_base_dir }}/data"
+yattee_cache_dir: "{{ yattee_base_dir }}/yt-dlp-cache"
+yattee_tailscale_state_dir: "{{ yattee_tailscale_dir }}/state"
+yattee_admin_user: yattee-admin
+yattee_admin_password: "{{ vault_yattee_admin_password }}"
+yattee_secret_key: "{{ vault_yattee_secret_key }}"
+tailscale_auth_key: "{{ vault_tailscale_auth_key }}"
+
+yattee_server_container_name: yattee-server
+yattee_tailscale_container_name: yattee-tailscale-sidecar
+yattee_tailscale_hostname: qnap-yattee

@@ -1,0 +1,30 @@
+---
+# LMS 角色变量
+
+# ── LMS 镜像与容器名称 ─────────────────────────────────────
+lms_image: "lmscommunity/lyrionmusicserver:latest"
+lms_container_name: "lyrionms"
+
+# ── 端口映射 ──────────────────────────────────────────────
+lms_http_port: 9000
+lms_cli_port: 9090
+lms_stream_tcp_port: 3483
+lms_stream_udp_port: 3483
+
+# ── 目录路径 ──────────────────────────────────────────────
+lms_compose_dir: "{{ qnap_container_ssd_dir }}/LMS_Data"
+lms_config_dir: "{{ lms_compose_dir }}/config"
+lms_playlist_dir: "{{ lms_compose_dir }}/playlist"
+lms_music_dir: "{{ qnap_media_dir }}/Audio/Popular"
+
+# ── 容器权限 ──────────────────────────────────────────────
+lms_puid: "99"
+lms_pgid: "100"
+
+# ── 时区 ──────────────────────────────────────────────────
+timezone: "America/Vancouver"
+
+# ── 资源限制 ──────────────────────────────────────────────
+lms_cpu_limit: "2.0"
+lms_memory_limit: "2048M"
+lms_memory_reservation: "1024M"

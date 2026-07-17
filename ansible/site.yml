@@ -1,0 +1,16 @@
+---
+- name: 在 QNAP 上部署 Docker 和 MariaDB
+  hosts: qnap
+  gather_facts: no
+  vars_files:
+    - secrets.yml
+
+  roles:
+    - role: docker
+      tags: ['docker']
+    - role: mariadb
+      tags: ['mariadb']
+    - role: lms
+      tags: ['lms']
+    - role: yattee
+      tags: ['yattee']

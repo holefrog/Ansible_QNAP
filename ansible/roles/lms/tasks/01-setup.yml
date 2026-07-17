@@ -1,0 +1,28 @@
+---
+- name: 确保 Ansible 用户对部署目录有写入权限
+  ansible.builtin.shell: |
+    echo "{{ vault_qnap_password }}" | sudo -S chown {{ ansible_user }} "{{ lms_compose_dir }}" "{{ lms_compose_dir }}/docker-compose.yml" || true
+    echo "{{ vault_qnap_password }}" | sudo -S chown -R 99:100 "{{ lms_config_dir }}" || true
+    echo "{{ vault_qnap_password }}" | sudo -S chown -R 99:100 "{{ lms_playlist_dir }}" || true
+  ignore_errors: yes
+  changed_when: false
+
+- name: 创建 LMS 目录
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ lms_compose_dir }}"
+    - "{{ lms_config_dir }}"
+    - "{{ lms_playlist_dir }}"
+
+- name: 检查是否有更新的 LMS 镜像
+  ansible.builtin.command: "{{ qnap_docker_bin }} pull {{ lms_image }}"
+  register: pull_result
+  changed_when: "'Downloaded newer image' in pull_result.stdout"
+
+- name: 查找系统上现存的 LMS 容器
+  ansible.builtin.shell: "{{ qnap_docker_bin }} ps -a --filter name=^lyrionms --format '{% raw %}{{.Names}}{% endraw %}'"
+  register: existing_lms_containers
+  changed_when: false

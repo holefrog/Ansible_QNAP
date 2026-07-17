@@ -1,0 +1,15 @@
+---
+# Kodi 需要 GRANT ALL ON *.* 才能建库、建表、建 TRIGGER
+# 容器的 MYSQL_USER 已经创建了 kodi 用户，但只授予了 kodi_video 权限，这里补充全局权限
+- name: 为 Kodi 数据库用户授予全局权限
+  ansible.builtin.command: >
+    {{ qnap_docker_bin }} exec {{ mariadb_container_name }}
+    mysql -uroot -p"{{ mariadb_root_password }}" -e "GRANT ALL ON *.* TO '{{ mariadb_user }}'@'%'; FLUSH PRIVILEGES;"
+  changed_when: false
+
+# MYSQL_DATABASE 环境变量只能创建一个库，这里确保即使环境变量没生效，库也存在
+- name: 确保 kodi_video 数据库存在（utf8mb4）
+  ansible.builtin.command: >
+    {{ qnap_docker_bin }} exec {{ mariadb_container_name }}
+    mysql -uroot -p"{{ mariadb_root_password }}" -e "CREATE DATABASE IF NOT EXISTS kodi_video CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+  changed_when: false
