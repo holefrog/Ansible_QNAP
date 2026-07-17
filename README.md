@@ -28,7 +28,10 @@
 
 ### 2.3 Yattee Server
 - **双引擎内网穿透架构**：同时支持局域网 HTTP 直连与 Tailscale Sidecar 零信任模式。通过 `yattee_local_port` 与 `yattee_internal_port` 常量解耦暴露本地端口满足局域网纯本地调优需求，同时依靠 Tailscale MagicDNS 提供完美适配 iOS ATS 限制的 Let's Encrypt HTTPS 证书，兼顾调试便利与全天候移动端无缝漫游体验。
-- **全自动 Cookie 提取与同步**：支持从本地主机全自动弹窗拉起隔离版 Chrome，用户登录 YouTube 后，脚本会自动使用 `yt-dlp` 提取 Cookie 并加密推送到 NAS 的正确目录下，解决 Yattee 免登录无法使用的问题。
+- **全自动 Cookie 提取与同步**：支持从本地主机全自动弹窗拉起隔离版 Chrome，用户登录 YouTube 后，脚本会自动使用 `yt-dlp` 提取 Cookie 并以物理文件形式推送到 NAS 的正确目录下，解决 Yattee 免登录无法使用的问题。
+  > **⚠️ 注意：关于 Web UI 凭据状态显示的视觉差异**
+  > 由于本 Ansible 脚本采用了最高效的底层文件级挂载方式（直接将 `cookies.txt` 挂载为 `--cookies /etc/yt-dlp-cookies.txt` 喂给下载引擎），直接绕过了常规的网页数据库存取。
+  > 因此，**你在 3000 端口的 Web 后台（Credentials 栏目）永远只会看到 `No credentials added`**。网页 UI 只能读取其自身的 SQLite 数据库，它是感知不到底层物理挂载文件的。这是完全符合预期的正常现象，请直接无视 UI 提示，只要客户端播放正常即代表底层凭据已完美生效！
 - **自动化无损更新**：Ansible 自动将更新脚本注入至 QNAP `crontab`（每周执行），且 Cookie 文件权限完美适配了热更新需求。
 
 ---
