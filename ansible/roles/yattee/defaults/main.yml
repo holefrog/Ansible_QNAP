@@ -12,6 +12,7 @@ yattee_admin_password: "{{ vault_yattee_admin_password }}"
 yattee_secret_key: "{{ vault_yattee_secret_key }}"
 tailscale_auth_key: "{{ vault_tailscale_auth_key }}"
 
+yattee_local_port: 3000
 yattee_server_container_name: yattee-server
 yattee_tailscale_container_name: yattee-tailscale-sidecar
 yattee_tailscale_hostname: qnap-yattee
