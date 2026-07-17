@@ -27,7 +27,7 @@
 - **安全平滑升级**：自动定位并清理旧版本容器，释放核心端口，确保升级 `0` 损耗过渡。
 
 ### 2.3 Yattee Server
-- **零公网暴露接入**：采用 Sidecar 模式接入 Tailscale，Yattee 业务容器完全复用网关网络堆栈，无须映射端口即可安全访问。
+- **双引擎内网穿透架构**：同时支持局域网 HTTP 直连与 Tailscale Sidecar 零信任模式。通过 `yattee_local_port` 与 `yattee_internal_port` 常量解耦暴露本地端口满足局域网纯本地调优需求，同时依靠 Tailscale MagicDNS 提供完美适配 iOS ATS 限制的 Let's Encrypt HTTPS 证书，兼顾调试便利与全天候移动端无缝漫游体验。
 - **全自动 Cookie 提取与同步**：支持从本地主机全自动弹窗拉起隔离版 Chrome，用户登录 YouTube 后，脚本会自动使用 `yt-dlp` 提取 Cookie 并加密推送到 NAS 的正确目录下，解决 Yattee 免登录无法使用的问题。
 - **自动化无损更新**：Ansible 自动将更新脚本注入至 QNAP `crontab`（每周执行），且 Cookie 文件权限完美适配了热更新需求。
 

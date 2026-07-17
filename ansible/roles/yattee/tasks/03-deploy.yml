@@ -11,3 +11,18 @@
     HOME: "/tmp"
   register: yattee_compose_result
   changed_when: "'Started' in yattee_compose_result.stdout or 'Recreated' in yattee_compose_result.stdout"
+
+- name: 提示 Yattee 客户端连接方式
+  ansible.builtin.debug:
+    msg: |
+      🎉 Yattee Server 容器已成功启动！
+      
+      📱 请在 Yattee iOS/Mac 客户端中添加以下服务器地址（根据所处网络环境选择）：
+      
+      【外网/全天候无缝漫游通道 (推荐)】
+      - 地址: https://{{ yattee_tailscale_hostname }}.<你的Tailscale后缀>.ts.net
+      - 条件: 需要在 Tailscale 控制台开启 MagicDNS 及 HTTPS 证书，并保持手机端 Tailscale 常开。
+      
+      【局域网内网直连通道 (备用)】
+      - 地址: http://{{ inventory_hostname }}:{{ yattee_local_port }}
+      - 条件: 手机必须与 NAS 处于同一 Wi-Fi，且关闭 Tailscale。注意：此通道未加密，可能触发 iOS ATS 限制导致部分功能异常。
