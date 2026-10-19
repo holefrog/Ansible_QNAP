@@ -5,7 +5,7 @@
 lms_image: "lmscommunity/lyrionmusicserver:latest"
 lms_container_name: "lyrionms"
 
-# ── 端口映射 ──────────────────────────────────────────────
+# ── 端口配置 (host 模式直接共享宿主机网络栈) ───────────────
 lms_http_port: 9000
 lms_cli_port: 9090
 lms_stream_tcp_port: 3483

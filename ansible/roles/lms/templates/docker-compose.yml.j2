@@ -2,11 +2,7 @@ services:
   {{ lms_container_name }}:
     image: {{ lms_image }}
     container_name: {{ lms_container_name }}
-    ports:
-      - "{{ lms_stream_tcp_port }}:3483/tcp"
-      - "{{ lms_stream_udp_port }}:3483/udp"
-      - "{{ lms_http_port }}:9000"
-      - "{{ lms_cli_port }}:9090"
+    network_mode: host
     volumes:
       - "{{ lms_config_dir }}:/config"
       - "{{ lms_playlist_dir }}:/playlist"
