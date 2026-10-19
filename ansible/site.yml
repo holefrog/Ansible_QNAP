@@ -12,5 +12,4 @@
       tags: ['mariadb']
     - role: lms
       tags: ['lms']
-    - role: yattee
-      tags: ['yattee']
+
