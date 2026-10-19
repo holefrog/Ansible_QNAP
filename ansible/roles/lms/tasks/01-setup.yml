@@ -22,7 +22,13 @@
   register: pull_result
   changed_when: "'Downloaded newer image' in pull_result.stdout"
 
-- name: 查找系统上现存的 LMS 容器
-  ansible.builtin.shell: "{{ qnap_docker_bin }} ps -a --filter name=^lyrionms --format '{% raw %}{{.Names}}{% endraw %}'"
+- name: 查找系统上现存的所有 LMS 容器 (包括已停止)
+  ansible.builtin.command: "{{ qnap_docker_bin }} ps -a --filter name=^{{ lms_container_name }}$ --format '{% raw %}{{.Names}}{% endraw %}'"
   register: existing_lms_containers
+  changed_when: false
+
+- name: 检查系统上运行中的 LMS 容器 (仅 Running 状态)
+  # 区分“已存在”与“运行中”，若容器处于 Exited 状态需触发自愈拉起
+  ansible.builtin.command: "{{ qnap_docker_bin }} ps --filter name=^{{ lms_container_name }}$ --format '{% raw %}{{.Names}}{% endraw %}'"
+  register: running_lms_containers
   changed_when: false

@@ -1,21 +1,30 @@
 ---
+# 先渲染配置，以便检测参数/端口等配置是否发生了变更
+- name: 渲染并部署 docker-compose.yml 到目标机器
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ lms_compose_dir }}/docker-compose.yml"
+    mode: '0644'
+  register: compose_template
+
 - name: 执行新容器部署或更新
-  when: pull_result.changed or (existing_lms_containers.stdout_lines != ['lyrionms'])
+  # 满足以下任一条件即触发容器部署/自愈：
+  # 1. 镜像有更新 (pull_result.changed)
+  # 2. 配置文件发生变动 (compose_template.changed)
+  # 3. 容器当前未处于运行状态 (包括停止、崩溃或未创建)
+  when: >-
+    pull_result.changed or
+    compose_template.changed or
+    (lms_container_name not in running_lms_containers.stdout_lines)
   block:
     - name: 停止并移除旧的 LMS 容器，释放端口
       ansible.builtin.command: "{{ qnap_docker_bin }} rm -f {{ item }}"
       loop: "{{ existing_lms_containers.stdout_lines }}"
       when: existing_lms_containers.stdout_lines | length > 0
 
-    - name: 渲染并部署 docker-compose.yml 到目标机器
-      ansible.builtin.template:
-        src: docker-compose.yml.j2
-        dest: "{{ lms_compose_dir }}/docker-compose.yml"
-        mode: '0644'
-
     - name: 启动或更新 LMS 容器
       ansible.builtin.command:
-        cmd: "{{ qnap_docker_bin }} compose -p lyrionms up -d"
+        cmd: "{{ qnap_docker_bin }} compose -p {{ lms_container_name }} up -d"
         chdir: "{{ lms_compose_dir }}"
       register: start_lms
       changed_when: "'Started' in start_lms.stdout or 'Created' in start_lms.stdout"
