@@ -11,8 +11,6 @@
             file: roles/mariadb/defaults/main.yml
         - ansible.builtin.include_vars:
             file: roles/lms/defaults/main.yml
-        - ansible.builtin.include_vars:
-            file: roles/yattee/defaults/main.yml
       ignore_errors: true
 
     - name: "========== 1. Docker 全局容器状态 =========="
@@ -29,35 +27,13 @@
       become: yes
       become_user: admin
 
-    - name: "========== 2. Tailscale 虚拟组网状态 =========="
-      block:
-        - name: 检查 Tailscale 容器是否运行
-          ansible.builtin.command:
-            cmd: "{{ qnap_docker_bin | default('docker') }} exec {{ yattee_tailscale_container_name | default('yattee-tailscale-sidecar') }} tailscale status"
-          register: tailscale_status
-          changed_when: false
-          ignore_errors: true
-
-        - name: 显示 Tailscale 状态
-          ansible.builtin.debug:
-            msg: "{{ tailscale_status.stdout_lines }}"
-          when: not tailscale_status.failed
-
-        - name: 提示 Tailscale 异常
-          ansible.builtin.debug:
-            msg: "⚠️ Tailscale 容器未运行或尚未完成登录"
-          when: tailscale_status.failed
-      become: yes
-      become_user: admin
-
-    - name: "========== 3. 部署目录概览 =========="
+    - name: "========== 2. 部署目录概览 =========="
       ansible.builtin.stat:
         path: "{{ item }}"
       loop:
         - "{{ qnap_container_dir | default('/share/CACHEDEV1_DATA/Container') }}"
         - "{{ mariadb_compose_dir | default('/share/CACHEDEV1_DATA/Container_SSD/kodi-mariadb') }}"
         - "{{ lms_compose_dir | default('/share/CACHEDEV1_DATA/Container_SSD/LMS_Data') }}"
-        - "{{ yattee_install_dir | default('/share/CACHEDEV1_DATA/Container/yattee-server') }}"
       register: dir_status
       become: yes
       become_user: admin
